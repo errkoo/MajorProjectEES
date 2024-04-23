@@ -16,6 +16,7 @@ namespace MajorProjectEES
         private int teacherID = 0;
         private string fName = string.Empty;
         private string lName = string.Empty;
+
         public TeacherView()
         {
             InitializeComponent();

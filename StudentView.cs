@@ -8,16 +8,79 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolBar;
 
 namespace MajorProjectEES
 {
     public partial class StudentView : Form
     {
+        private string filters = "";
+        private DataTable resultTable;
+        private string connectionString = @"Data Source=LAB108PC04\SQLEXPRESS; Initial Catalog=MajorProjectEES; Integrated Security=True;";
+
         public StudentView()
         {
             InitializeComponent();
-            LoadClasses();
+            using (SqlConnection con = new SqlConnection(connectionString))
+            {
+                con.Open();
+                SqlCommand cmd = new SqlCommand("SELECT ORDINAL_POSITION,COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '[Users]'", con);
+                SqlDataAdapter adapter = new SqlDataAdapter();
+                adapter.SelectCommand = cmd;
+                DataTable townsTable = new DataTable();
+
+                adapter.Fill(townsTable);
+                //columnsComboBox.DataSource = townsTable;
+                columnsComboBox.DisplayMember = "COLUMN_NAME";
+                columnsComboBox.ValueMember = "ORDINAL_POSITION";
+                columnsComboBox.DataSource = townsTable;
+                columnsComboBox.Enabled = true;
+                textBox1.Enabled = false;
+                columnsComboBox.SelectionChangeCommitted += columnsComboBox_SelectionChangeCommitted;
+                filters = string.Empty;
+                //columnsComboBox.SelectedIndexChanged += columnsComboBox_SelectedIndexChanged_1;
+            }
         }
+        private void columnsComboBox_SelectionChangeCommitted(object sender, EventArgs e)
+        {
+            filters += columnsComboBox.GetItemText(columnsComboBox.SelectedItem).Trim();
+            columnsComboBox.Enabled = false;
+            textBox1.Enabled = true;
+        }
+        private void StudentView_Load(object sender, EventArgs e)
+        {
+            LoadClasses();
+
+            using (SqlConnection con = new SqlConnection(connectionString))
+            {
+                con.Open();
+                SqlCommand cmd = new SqlCommand("SELECT * from '[Users]", con);
+                SqlDataAdapter adapter = new SqlDataAdapter();
+                adapter.SelectCommand = cmd;
+                resultTable = new DataTable();
+                adapter.Fill(resultTable);
+                dataGridView1.DataSource = resultTable;
+            }
+
+            //using (SqlConnection con = new SqlConnection(connectionString))
+            //{
+            //    con.Open();
+            //    SqlCommand cmd = new SqlCommand("SELECT ORDINAL_POSITION,COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Photos'", con);
+            //    SqlDataAdapter adapter = new SqlDataAdapter();
+            //    adapter.SelectCommand = cmd;
+            //    DataTable townsTable = new DataTable();
+
+            //    adapter.Fill(townsTable);
+            //    columnsComboBox.DataSource = townsTable;
+            //    columnsComboBox.DisplayMember = "COLUMN_NAME";
+            //    columnsComboBox.ValueMember = "ORDINAL_POSITION";
+            //    columnsComboBox.Enabled = true;
+            //    textBox2.Enabled = false;
+            //}
+            filters = string.Empty;
+        }
+       
 
         private void refresh_button_Click(object sender, EventArgs e)
         {
@@ -28,15 +91,14 @@ namespace MajorProjectEES
                     return;
                 }
 
-                string connectionString = @"Data Source=LAB108PC04\SQLEXPRESS; Initial Catalog=MajorProjectEES; Integrated Security=True;";
-            string query = @"
-        SELECT st.FirstName, st.LastName, s.SubjectName, t.FirstName + ' ' + t.LastName as TeacherName, c.ClassTime, c.RoomNumber
-        FROM Students st
-        LEFT JOIN Enrollments e ON st.StudentID = e.StudentID
-        LEFT JOIN Classes c ON e.ClassID = c.ClassID
-        LEFT JOIN Subjects s ON c.SubjectID = s.SubjectID
-        LEFT JOIN Teachers t ON c.TeacherID = t.TeacherID
-        WHERE st.StudentID = @StudentID";
+                string query = @"
+                SELECT st.FirstName, st.LastName, s.SubjectName, t.FirstName + ' ' + t.LastName as TeacherName, c.ClassTime, c.RoomNumber
+                FROM Students st
+                LEFT JOIN Enrollments e ON st.StudentID = e.StudentID
+                LEFT JOIN Classes c ON e.ClassID = c.ClassID
+                LEFT JOIN Subjects s ON c.SubjectID = s.SubjectID
+                LEFT JOIN Teachers t ON c.TeacherID = t.TeacherID
+                WHERE st.StudentID = @StudentID";
 
             using (SqlConnection sqlConnection = new SqlConnection(connectionString))
             {
@@ -119,6 +181,70 @@ namespace MajorProjectEES
 
             loginWindow.Show();
             this.Hide();
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+            andButton.Enabled = true;
+            orButton.Enabled = true;
+        }
+
+        private void clearButton_Click(object sender, EventArgs e)
+        {
+            textBox1.Text = string.Empty;
+            filters = string.Empty;
+            textBox1.Enabled = false;
+            andButton.Enabled = false;
+            orButton.Enabled = false;
+            columnsComboBox.Enabled = true;
+        }
+
+        private void andButton_Click(object sender, EventArgs e)
+        {
+            if (!filters.Equals(""))
+            {
+                filters += " Like '%" + textBox1.Text + "%'";
+                MessageBox.Show(filters);
+                filters += " AND ";
+                textBox1.Text = "";
+                textBox1.Enabled = false;
+                andButton.Enabled = false;
+                orButton.Enabled = false;
+                columnsComboBox.Enabled = true;
+            }
+        }
+
+        private void orButton_Click(object sender, EventArgs e)
+        {
+            if (!filters.Equals(""))
+            {
+                filters += " Like '%" + textBox1.Text + "%'";
+                MessageBox.Show(filters);
+                filters += " OR ";
+                textBox1.Text = "";
+                textBox1.Enabled = false;
+                andButton.Enabled = false;
+                orButton.Enabled = false;
+                columnsComboBox.Enabled = true;
+            }
+        }
+
+        private void filterButton_Click(object sender, EventArgs e)
+        {
+            if (!filters.Equals(string.Empty))
+            {
+                filters += " Like '%" + textBox1.Text + "%'";
+                MessageBox.Show(filters);
+                DataView dv = resultTable.DefaultView;
+                dv.RowFilter = filters;
+
+                textBox1.Text = string.Empty;
+                //filters = string.Empty;
+                textBox1.Enabled = false;
+                andButton.Enabled = false;
+                orButton.Enabled = false;
+                columnsComboBox.Enabled = true;
+            }
         }
     }
 }
