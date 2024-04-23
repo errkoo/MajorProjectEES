@@ -34,11 +34,11 @@ namespace MajorProjectEES
         {
             string connectionString = @"Data Source=LAB108PC04\SQLEXPRESS; Initial Catalog=MajorProjectEES; Integrated Security=True;";
             string query = @"
-        SELECT t.FirstName, t.LastName, s.SubjectName, c.ClassTime, c.RoomNumber 
-        FROM Teachers t
-        LEFT JOIN Classes c ON t.TeacherID = c.TeacherID
-        LEFT JOIN Subjects s ON c.SubjectID = s.SubjectID
-        WHERE t.TeacherID = @TeacherID";
+            SELECT t.FirstName, t.LastName, s.SubjectName, c.ClassTime, c.RoomNumber 
+            FROM Teachers t
+            LEFT JOIN Classes c ON t.TeacherID = c.TeacherID
+            LEFT JOIN Subjects s ON c.SubjectID = s.SubjectID
+            WHERE t.TeacherID = @TeacherID";
 
             using (SqlConnection sqlConnection = new SqlConnection(connectionString))
             {
